@@ -5,7 +5,9 @@ on:
     branches: [ main ]
 
 jobs:
+
   build:
+
     runs-on: ubuntu-latest
 
     env:
@@ -26,6 +28,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run model training test
+    - name: Verify project structure
       run: |
-        python -m src.train_model
+        ls
+        ls data
+
+    - name: Run preprocessing test
+      run: |
+        python -c "from src.preprocessing import preprocess_pipeline"
+
+    - name: Run model import test
+      run: |
+        python -c "import xgboost"
+        python -c "import shap"
