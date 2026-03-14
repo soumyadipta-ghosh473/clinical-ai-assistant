@@ -2,117 +2,291 @@ import streamlit as st
 import pandas as pd
 import joblib
 import shap
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
+from groq import Groq
+import os
+import numpy as np
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from io import BytesIO
 
-# ---- PROMPT VERSIONING ----
+APP_VERSION = "1.2.0"
+
+# ---------- PROMPT ----------
 def load_prompt():
-    with open("prompts/clinical_prompt_v1.txt", "r") as f:
-        prompt = f.read()
-    return prompt
+    with open("prompts/clinical_prompt_v1.txt","r") as f:
+        return f.read()
 
-st.set_page_config(page_title="AI Clinical Assistant", page_icon="🩺", layout="wide")
+st.set_page_config(page_title="AI Clinical Assistant",page_icon="🩺",layout="wide")
 
+# ---------- STYLING ----------
 st.markdown("""
 <style>
-.main-title {
-font-size:42px;
-font-weight:700;
-color:#2E8B57;
-}
-.box {
-background-color:#F0F8FF;
+.block-container{padding-top:1rem;}
+.main-title{font-size:38px;font-weight:700;color:#1E88E5;}
+.section{
+background:white;
 padding:20px;
-border-radius:10px;
-}
+border-radius:12px;
+box-shadow:0px 3px 10px rgba(0,0,0,0.08);
+margin-bottom:25px;}
+.footer{font-size:13px;color:gray;}
 </style>
-""", unsafe_allow_html=True)
+""",unsafe_allow_html=True)
 
-st.markdown('<p class="main-title">AI Clinical Assistant</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">🩺 AI Clinical Assistant Dashboard</p>',unsafe_allow_html=True)
+st.markdown(f"<p class='footer'>Version {APP_VERSION}</p>",unsafe_allow_html=True)
 
 model = joblib.load("models/xgboost_model.pkl")
 
+# ---------- SIDEBAR ----------
 st.sidebar.title("Model Information")
-
-st.sidebar.write("**Model:** XGBoost Classifier")
-st.sidebar.write("**Type:** Gradient Boosting Ensemble")
-st.sidebar.write("**Architecture:** 200 Decision Trees")
+st.sidebar.write("**Model:** XGBoost")
+st.sidebar.write("**Architecture:** Gradient Boosting Trees")
 st.sidebar.write("**Explainability:** SHAP")
 
-# ---------- PATIENT INPUT FORM ----------
+# ---------------------------------------------------
+# ICU LIVE MONITORING PANEL
+# ---------------------------------------------------
 
-st.subheader("Enter Patient Clinical Parameters")
+st.markdown('<div class="section">',unsafe_allow_html=True)
+st.subheader("ICU Live Monitoring Panel")
 
-col1, col2, col3 = st.columns(3)
+time = np.arange(0,20)
+
+hr = np.random.normal(80,3,20)
+temp = np.random.normal(37,0.2,20)
+spo2 = np.random.normal(98,1,20)
+bp = np.random.normal(120,5,20)
+
+col1,col2 = st.columns(2)
 
 with col1:
-    temperature = st.number_input("Temperature", value=37.0)
-    heart_rate = st.number_input("Heart Rate", value=80)
-    wbc = st.number_input("WBC", value=7.0)
-    hemoglobin = st.number_input("Hemoglobin", value=14.0)
+    st.plotly_chart(px.line(x=time,y=hr,labels={"x":"Time","y":"Heart Rate"}),use_container_width=True)
+    st.plotly_chart(px.line(x=time,y=temp,labels={"x":"Time","y":"Temperature"}),use_container_width=True)
 
 with col2:
-    bp_sys = st.number_input("Systolic BP", value=120)
-    bp_dia = st.number_input("Diastolic BP", value=80)
-    glucose = st.number_input("Blood Glucose", value=100)
-    spo2 = st.number_input("SpO2", value=98)
+    st.plotly_chart(px.line(x=time,y=spo2,labels={"x":"Time","y":"SpO2"}),use_container_width=True)
+    st.plotly_chart(px.line(x=time,y=bp,labels={"x":"Time","y":"Blood Pressure"}),use_container_width=True)
 
-with col3:
-    creatinine = st.number_input("Creatinine", value=1.0)
-    resp_rate = st.number_input("Respiratory Rate", value=16)
-    icu_stay = st.number_input("ICU Length of Stay", value=3)
-    lab_tests = st.number_input("Number of Lab Tests", value=5)
+st.markdown('</div>',unsafe_allow_html=True)
+
+# ---------------------------------------------------
+# PATIENT TIMELINE
+# ---------------------------------------------------
+
+st.markdown('<div class="section">',unsafe_allow_html=True)
+st.subheader("Patient Timeline (Last 24 Hours)")
+
+timeline = pd.DataFrame({
+"time":range(24),
+"heart_rate":np.random.normal(80,4,24),
+"spo2":np.random.normal(97,1,24),
+"temperature":np.random.normal(37,0.3,24)
+})
+
+st.plotly_chart(px.line(timeline,x="time",y="heart_rate"),use_container_width=True)
+st.plotly_chart(px.line(timeline,x="time",y="spo2"),use_container_width=True)
+st.plotly_chart(px.line(timeline,x="time",y="temperature"),use_container_width=True)
+
+st.markdown('</div>',unsafe_allow_html=True)
+
+# ---------------------------------------------------
+# PATIENT INPUT
+# ---------------------------------------------------
+
+st.markdown('<div class="section">',unsafe_allow_html=True)
+st.subheader("Patient Clinical Parameters")
+
+c1,c2,c3 = st.columns(3)
+
+with c1:
+    temperature = st.number_input("Temperature",37.0)
+    heart_rate = st.number_input("Heart Rate",80)
+    wbc = st.number_input("WBC",7.0)
+    hemoglobin = st.number_input("Hemoglobin",14.0)
+
+with c2:
+    bp_sys = st.number_input("Systolic BP",120)
+    bp_dia = st.number_input("Diastolic BP",80)
+    glucose = st.number_input("Blood Glucose",100)
+    spo2 = st.number_input("SpO2",98)
+
+with c3:
+    creatinine = st.number_input("Creatinine",1.0)
+    resp = st.number_input("Respiratory Rate",16)
+    icu = st.number_input("ICU Length of Stay",3)
+    labs = st.number_input("Number of Lab Tests",5)
+    meds = st.number_input("Number of Medications",2)
+
+st.markdown('</div>',unsafe_allow_html=True)
+
+# ---------------------------------------------------
+# ALERT SYSTEM
+# ---------------------------------------------------
+
+alerts=[]
+
+if heart_rate>120:
+    alerts.append("Tachycardia detected")
+
+if spo2<92:
+    alerts.append("Hypoxia risk")
+
+if temperature>38:
+    alerts.append("Possible infection")
+
+if creatinine>1.5:
+    alerts.append("Kidney function abnormal")
+
+if alerts:
+    st.markdown('<div class="section">',unsafe_allow_html=True)
+    st.subheader("Clinical Alerts")
+    for a in alerts:
+        st.warning(a)
+    st.markdown('</div>',unsafe_allow_html=True)
+
+# ---------------------------------------------------
+# PREDICTION
+# ---------------------------------------------------
 
 if st.button("Predict Risk"):
 
-    patient_data = pd.DataFrame({
-        "Temperature":[temperature],
-        "Blood_Pressure_Systolic":[bp_sys],
-        "Blood_Pressure_Diastolic":[bp_dia],
+    data=pd.DataFrame({
+        "ICU_Length_of_Stay":[icu],
+        "Blood_Glucose":[glucose],
         "Creatinine":[creatinine],
         "Hemoglobin":[hemoglobin],
         "WBC":[wbc],
         "Heart_Rate":[heart_rate],
-        "Blood_Glucose":[glucose],
+        "Blood_Pressure_Systolic":[bp_sys],
+        "Blood_Pressure_Diastolic":[bp_dia],
         "SpO2":[spo2],
-        "Respiratory_Rate":[resp_rate],
-        "ICU_Length_of_Stay":[icu_stay],
-        "Number_of_Lab_Tests":[lab_tests]
+        "Respiratory_Rate":[resp],
+        "Temperature":[temperature],
+        "Number_of_Lab_Tests":[labs],
+        "Number_of_Medications":[meds]
     })
 
-    prediction = model.predict_proba(patient_data)[:,1]
-    risk = prediction[0]
+    pred=model.predict_proba(data)[:,1]
+    risk=pred[0]
 
-    st.metric("Readmission Risk Score", round(risk,3))
+    st.metric("Readmission Risk Score",round(risk,3))
 
-    if risk > 0.7:
-        st.error("High Risk")
-    else:
-        st.success("Low Risk")
+    fig=go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=risk,
+        title={'text':"Readmission Risk"},
+        gauge={'axis':{'range':[0,1]},
+        'steps':[{'range':[0,0.4],'color':'green'},
+                 {'range':[0.4,0.7],'color':'yellow'},
+                 {'range':[0.7,1],'color':'red'}]}
+    ))
 
-    # SHAP explanation
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(patient_data)
+    st.plotly_chart(fig)
 
-    shap_df = pd.DataFrame({
-        "Feature": patient_data.columns,
-        "Importance": abs(shap_values[0])
+# ---------------------------------------------------
+# SHAP
+# ---------------------------------------------------
+
+    explainer=shap.TreeExplainer(model)
+    shap_values=explainer.shap_values(data)
+
+    shap_df=pd.DataFrame({
+    "Feature":data.columns,
+    "Importance":abs(shap_values[0])
     })
 
-    top_features = shap_df.sort_values("Importance", ascending=False).head(5)
+    top=shap_df.sort_values("Importance",ascending=False).head(5)
 
     st.subheader("Top Risk Factors")
-    st.table(top_features)
+    st.table(top)
 
-# -------- Clinical Explanation using Prompt --------
+    fig,ax=plt.subplots()
 
-prompt_template = load_prompt()
+    shap.plots.waterfall(
+        shap.Explanation(
+        values=shap_values[0],
+        base_values=explainer.expected_value,
+        data=data.iloc[0],
+        feature_names=data.columns),
+        show=False)
 
-features = ", ".join(top_features["Feature"].values)
+    st.pyplot(fig)
 
-clinical_explanation = prompt_template.replace("{features}", features)
+# ---------------------------------------------------
+# AI CLINICAL REASONING REPORT
+# ---------------------------------------------------
 
-st.subheader("Clinical Interpretation")
-st.write(clinical_explanation)
+    st.subheader("AI Clinical Assessment")
+
+    prompt=load_prompt()
+    features=", ".join(top["Feature"].values)
+
+    reasoning=f"""
+Risk Score: {round(risk,3)}
+
+Primary Risk Factors:
+{features}
+
+Possible Clinical Interpretation:
+These physiological indicators suggest potential clinical instability.
+Continuous monitoring and further diagnostic testing may be recommended.
+"""
+
+    st.write(reasoning)
+
+# ---------------------------------------------------
+# PDF REPORT
+# ---------------------------------------------------
+
+    buffer=BytesIO()
+    styles=getSampleStyleSheet()
+
+    elements=[]
+    elements.append(Paragraph("AI Clinical Risk Report",styles['Title']))
+    elements.append(Spacer(1,20))
+    elements.append(Paragraph(reasoning,styles['Normal']))
+    elements.append(Spacer(1,20))
+
+    table_data=[list(data.columns)]+data.values.tolist()
+    table=Table(table_data)
+    elements.append(table)
+
+    doc=SimpleDocTemplate(buffer,pagesize=letter)
+    doc.build(elements)
+
+    st.download_button("Download PDF Report",buffer.getvalue(),"clinical_report.pdf")
+
+# ---------------------------------------------------
+# DOCTOR AI CHATBOT
+# ---------------------------------------------------
+
+st.markdown('<div class="section">',unsafe_allow_html=True)
+st.subheader("Doctor AI Assistant")
+
+question=st.text_input("Ask a medical question")
+
+if question:
+
+    client=Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+    system_prompt="""
+You are a professional medical assistant.
+Only answer healthcare questions.
+If unrelated say: I can only assist with medical questions.
+"""
+
+    r=client.chat.completions.create(
+    model="llama-3.3-70b-versatile",
+    messages=[
+    {"role":"system","content":system_prompt},
+    {"role":"user","content":question}
+    ])
+
+    st.write(r.choices[0].message.content)
+
+st.markdown('</div>',unsafe_allow_html=True)
