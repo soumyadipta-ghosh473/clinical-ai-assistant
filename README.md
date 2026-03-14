@@ -1,0 +1,206 @@
+\# 🩺 AI Clinical Assistant
+
+
+
+An AI-powered \*\*Clinical Decision Support System\*\* that predicts ICU readmission risk using machine learning and explainable AI.
+
+
+
+The system integrates \*\*XGBoost prediction, SHAP explainability, Streamlit dashboards, prompt versioning, and CI/CD automation\*\*.
+
+
+
+\---
+
+
+
+\# 🚀 Features
+
+
+
+• ICU Readmission Risk Prediction  
+
+• SHAP Explainable AI  
+
+• Interactive Clinical Dashboard  
+
+• Risk Gauge Visualization  
+
+• AI Doctor Chatbot  
+
+• Prompt Versioning  
+
+• Clinical Interpretation Layer  
+
+• PDF Clinical Report Generation  
+
+• CI/CD Pipeline using GitHub Actions  
+
+
+
+\---
+
+
+
+\# 🧠 Model
+
+
+
+Model Used: \*\*XGBoost Classifier\*\*
+
+
+
+Architecture:
+
+
+
+\- Gradient Boosting Ensemble
+
+\- 200 Decision Trees
+
+\- Max Depth: 6
+
+\- Learning Rate: 0.05
+
+
+
+Explainability:
+
+
+
+\- SHAP (SHapley Additive Explanations)
+
+
+
+Evaluation Metrics:
+
+
+
+\- AUROC
+
+\- AUPRC
+
+\- Calibration Curve
+
+
+
+\---
+
+
+
+\# 🏗 System Architecture
+
+
+
+Clinical Dataset  
+
+↓  
+
+Data Preprocessing (KNN + Percentile Clipping)  
+
+↓  
+
+XGBoost Prediction Model  
+
+↓  
+
+SHAP Explainability  
+
+↓  
+
+Clinical Interpretation Layer  
+
+↓  
+
+Streamlit Clinical Dashboard  
+
+↓  
+
+PDF Medical Report  
+
+
+
+\---
+
+
+
+\# 🛠 Tech Stack
+
+
+
+Python  
+
+XGBoost  
+
+Streamlit  
+
+SHAP  
+
+Plotly  
+
+Scikit-Learn  
+
+Pandas  
+
+ReportLab  
+
+GitHub Actions  
+
+
+
+\---
+
+
+
+\# 📊 Dashboard Capabilities
+
+
+
+The dashboard allows clinicians to:
+
+
+
+• Enter patient parameters  
+
+• Predict ICU readmission risk  
+
+• Visualize risk using a gauge chart  
+
+• View SHAP feature importance plots  
+
+• Generate downloadable clinical reports  
+
+• Ask questions using the AI Doctor Assistant  
+
+
+
+\---
+
+
+
+\# 🔄 CI/CD Pipeline
+
+
+
+GitHub Actions automatically performs:
+
+
+
+• Dependency installation  
+
+• Pipeline validation  
+
+• Model environment testing  
+
+
+
+\---
+
+
+
+\# 👨‍⚕️ Author
+
+
+
+Soumyadipta Ghosh
+
