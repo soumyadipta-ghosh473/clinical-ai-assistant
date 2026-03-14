@@ -44,7 +44,7 @@ margin-bottom:25px;
 </style>
 """,unsafe_allow_html=True)
 
-# ---------- HEADER FIX ----------
+# ---------- HEADER ----------
 st.markdown("""
 <h1 style='text-align:center; color:#1E88E5; font-size:42px;'>
 🩺 AI Clinical Assistant Dashboard
@@ -129,30 +129,30 @@ with c3:
 
 st.markdown('</div>',unsafe_allow_html=True)
 
-# ---------- ALERT SYSTEM ----------
-alerts=[]
-
-if heart_rate>120:
-    alerts.append("Tachycardia detected")
-
-if spo2<92:
-    alerts.append("Hypoxia risk")
-
-if temperature>38:
-    alerts.append("Possible infection")
-
-if creatinine>1.5:
-    alerts.append("Kidney function abnormal")
-
-if alerts:
-    st.markdown('<div class="section">',unsafe_allow_html=True)
-    st.subheader("Clinical Alerts")
-    for a in alerts:
-        st.warning(a)
-    st.markdown('</div>',unsafe_allow_html=True)
-
 # ---------- PREDICTION ----------
 if st.button("Predict Risk"):
+
+    # ---------- ALERT SYSTEM (MOVED HERE) ----------
+    alerts=[]
+
+    if heart_rate>120:
+        alerts.append("Tachycardia detected")
+
+    if spo2<92:
+        alerts.append("Hypoxia risk")
+
+    if temperature>38:
+        alerts.append("Possible infection")
+
+    if creatinine>1.5:
+        alerts.append("Kidney function abnormal")
+
+    if alerts:
+        st.markdown('<div class="section">',unsafe_allow_html=True)
+        st.subheader("Clinical Alerts")
+        for a in alerts:
+            st.warning(a)
+        st.markdown('</div>',unsafe_allow_html=True)
 
     data=pd.DataFrame({
         "ICU_Length_of_Stay":[icu],
