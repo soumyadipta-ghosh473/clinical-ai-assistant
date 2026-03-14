@@ -8,16 +8,23 @@ import plotly.express as px
 from groq import Groq
 import os
 import numpy as np
+import pathlib
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from io import BytesIO
 
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
+
+# ---------- PATH FIX FOR STREAMLIT CLOUD ----------
+BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
+
+model_path = BASE_DIR / "models" / "xgboost_model.pkl"
+prompt_path = BASE_DIR / "prompts" / "clinical_prompt_v1.txt"
 
 # ---------- PROMPT ----------
 def load_prompt():
-    with open("prompts/clinical_prompt_v1.txt","r") as f:
+    with open(prompt_path,"r") as f:
         return f.read()
 
 st.set_page_config(page_title="AI Clinical Assistant",page_icon="🩺",layout="wide")
@@ -40,7 +47,8 @@ margin-bottom:25px;}
 st.markdown('<p class="main-title">🩺 AI Clinical Assistant Dashboard</p>',unsafe_allow_html=True)
 st.markdown(f"<p class='footer'>Version {APP_VERSION}</p>",unsafe_allow_html=True)
 
-model = joblib.load("models/xgboost_model.pkl")
+# ---------- LOAD MODEL ----------
+model = joblib.load(model_path)
 
 # ---------- SIDEBAR ----------
 st.sidebar.title("Model Information")
@@ -48,21 +56,18 @@ st.sidebar.write("**Model:** XGBoost")
 st.sidebar.write("**Architecture:** Gradient Boosting Trees")
 st.sidebar.write("**Explainability:** SHAP")
 
-# ---------------------------------------------------
-# ICU LIVE MONITORING PANEL
-# ---------------------------------------------------
-
+# ---------- ICU MONITORING ----------
 st.markdown('<div class="section">',unsafe_allow_html=True)
 st.subheader("ICU Live Monitoring Panel")
 
-time = np.arange(0,20)
+time=np.arange(0,20)
 
-hr = np.random.normal(80,3,20)
-temp = np.random.normal(37,0.2,20)
-spo2 = np.random.normal(98,1,20)
-bp = np.random.normal(120,5,20)
+hr=np.random.normal(80,3,20)
+temp=np.random.normal(37,0.2,20)
+spo2=np.random.normal(98,1,20)
+bp=np.random.normal(120,5,20)
 
-col1,col2 = st.columns(2)
+col1,col2=st.columns(2)
 
 with col1:
     st.plotly_chart(px.line(x=time,y=hr,labels={"x":"Time","y":"Heart Rate"}),use_container_width=True)
@@ -74,14 +79,11 @@ with col2:
 
 st.markdown('</div>',unsafe_allow_html=True)
 
-# ---------------------------------------------------
-# PATIENT TIMELINE
-# ---------------------------------------------------
-
+# ---------- TIMELINE ----------
 st.markdown('<div class="section">',unsafe_allow_html=True)
 st.subheader("Patient Timeline (Last 24 Hours)")
 
-timeline = pd.DataFrame({
+timeline=pd.DataFrame({
 "time":range(24),
 "heart_rate":np.random.normal(80,4,24),
 "spo2":np.random.normal(97,1,24),
@@ -94,40 +96,34 @@ st.plotly_chart(px.line(timeline,x="time",y="temperature"),use_container_width=T
 
 st.markdown('</div>',unsafe_allow_html=True)
 
-# ---------------------------------------------------
-# PATIENT INPUT
-# ---------------------------------------------------
-
+# ---------- PATIENT INPUT ----------
 st.markdown('<div class="section">',unsafe_allow_html=True)
 st.subheader("Patient Clinical Parameters")
 
-c1,c2,c3 = st.columns(3)
+c1,c2,c3=st.columns(3)
 
 with c1:
-    temperature = st.number_input("Temperature",37.0)
-    heart_rate = st.number_input("Heart Rate",80)
-    wbc = st.number_input("WBC",7.0)
-    hemoglobin = st.number_input("Hemoglobin",14.0)
+    temperature=st.number_input("Temperature",37.0)
+    heart_rate=st.number_input("Heart Rate",80)
+    wbc=st.number_input("WBC",7.0)
+    hemoglobin=st.number_input("Hemoglobin",14.0)
 
 with c2:
-    bp_sys = st.number_input("Systolic BP",120)
-    bp_dia = st.number_input("Diastolic BP",80)
-    glucose = st.number_input("Blood Glucose",100)
-    spo2 = st.number_input("SpO2",98)
+    bp_sys=st.number_input("Systolic BP",120)
+    bp_dia=st.number_input("Diastolic BP",80)
+    glucose=st.number_input("Blood Glucose",100)
+    spo2=st.number_input("SpO2",98)
 
 with c3:
-    creatinine = st.number_input("Creatinine",1.0)
-    resp = st.number_input("Respiratory Rate",16)
-    icu = st.number_input("ICU Length of Stay",3)
-    labs = st.number_input("Number of Lab Tests",5)
-    meds = st.number_input("Number of Medications",2)
+    creatinine=st.number_input("Creatinine",1.0)
+    resp=st.number_input("Respiratory Rate",16)
+    icu=st.number_input("ICU Length of Stay",3)
+    labs=st.number_input("Number of Lab Tests",5)
+    meds=st.number_input("Number of Medications",2)
 
 st.markdown('</div>',unsafe_allow_html=True)
 
-# ---------------------------------------------------
-# ALERT SYSTEM
-# ---------------------------------------------------
-
+# ---------- ALERT SYSTEM ----------
 alerts=[]
 
 if heart_rate>120:
@@ -149,10 +145,7 @@ if alerts:
         st.warning(a)
     st.markdown('</div>',unsafe_allow_html=True)
 
-# ---------------------------------------------------
-# PREDICTION
-# ---------------------------------------------------
-
+# ---------- PREDICTION ----------
 if st.button("Predict Risk"):
 
     data=pd.DataFrame({
@@ -188,10 +181,6 @@ if st.button("Predict Risk"):
 
     st.plotly_chart(fig)
 
-# ---------------------------------------------------
-# SHAP
-# ---------------------------------------------------
-
     explainer=shap.TreeExplainer(model)
     shap_values=explainer.shap_values(data)
 
@@ -217,12 +206,7 @@ if st.button("Predict Risk"):
 
     st.pyplot(fig)
 
-# ---------------------------------------------------
-# AI CLINICAL REASONING REPORT
-# ---------------------------------------------------
-
-    st.subheader("AI Clinical Assessment")
-
+# ---------- AI CLINICAL REPORT ----------
     prompt=load_prompt()
     features=", ".join(top["Feature"].values)
 
@@ -237,12 +221,10 @@ These physiological indicators suggest potential clinical instability.
 Continuous monitoring and further diagnostic testing may be recommended.
 """
 
+    st.subheader("AI Clinical Assessment")
     st.write(reasoning)
 
-# ---------------------------------------------------
-# PDF REPORT
-# ---------------------------------------------------
-
+# ---------- PDF REPORT ----------
     buffer=BytesIO()
     styles=getSampleStyleSheet()
 
@@ -261,10 +243,7 @@ Continuous monitoring and further diagnostic testing may be recommended.
 
     st.download_button("Download PDF Report",buffer.getvalue(),"clinical_report.pdf")
 
-# ---------------------------------------------------
-# DOCTOR AI CHATBOT
-# ---------------------------------------------------
-
+# ---------- DOCTOR AI ----------
 st.markdown('<div class="section">',unsafe_allow_html=True)
 st.subheader("Doctor AI Assistant")
 
