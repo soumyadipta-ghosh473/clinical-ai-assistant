@@ -1,8 +1,10 @@
 streamlit
 pandas
 numpy
-scikit-learn
 xgboost
+scikit-learn
 shap
-reportlab
+plotly
 matplotlib
+groq
+reportlab
