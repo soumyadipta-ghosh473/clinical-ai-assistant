@@ -33,18 +33,24 @@ st.set_page_config(page_title="AI Clinical Assistant",page_icon="🩺",layout="w
 st.markdown("""
 <style>
 .block-container{padding-top:1rem;}
-.main-title{font-size:38px;font-weight:700;color:#1E88E5;}
 .section{
 background:white;
 padding:20px;
 border-radius:12px;
 box-shadow:0px 3px 10px rgba(0,0,0,0.08);
-margin-bottom:25px;}
-.footer{font-size:13px;color:gray;}
+margin-bottom:25px;
+}
+.footer{font-size:13px;color:gray;text-align:center;}
 </style>
 """,unsafe_allow_html=True)
 
-st.markdown('<p class="main-title">🩺 AI Clinical Assistant Dashboard</p>',unsafe_allow_html=True)
+# ---------- HEADER FIX ----------
+st.markdown("""
+<h1 style='text-align:center; color:#1E88E5; font-size:42px;'>
+🩺 AI Clinical Assistant Dashboard
+</h1>
+""", unsafe_allow_html=True)
+
 st.markdown(f"<p class='footer'>Version {APP_VERSION}</p>",unsafe_allow_html=True)
 
 # ---------- LOAD MODEL ----------
