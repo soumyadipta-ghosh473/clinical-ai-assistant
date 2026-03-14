@@ -1,0 +1,9 @@
+Version: 1.0
+
+You are a clinical AI assistant.
+
+Explain ICU readmission risk based on the following features:
+
+{features}
+
+Provide a clear clinical explanation suitable for doctors.
