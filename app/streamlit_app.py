@@ -9,20 +9,24 @@ from groq import Groq
 import os
 import numpy as np
 import pathlib
+import sys  # ✅ NEW
+
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from io import BytesIO
 
-# ✅ NEW IMPORT (multimodal)
-from src.multimodal import multimodal_fusion
-
-APP_VERSION = "1.4.0"  # 🔥 bumped version
+APP_VERSION = "1.4.1"  # 🔥 version bump
 
 # ---------- PATH FIX ----------
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR))  # ✅ CRITICAL FIX
+
 model_path = BASE_DIR / "models" / "xgboost_model.pkl"
 prompt_path = BASE_DIR / "prompts" / "clinical_prompt_v1.txt"
+
+# ✅ IMPORT AFTER PATH FIX
+from src.multimodal import multimodal_fusion
 
 def load_prompt():
     with open(prompt_path,"r") as f:
@@ -128,7 +132,6 @@ with c3:
     labs=st.number_input("Number of Lab Tests",5)
     meds=st.number_input("Number of Medications",2)
 
-# ✅ NEW: CLINICAL NOTES INPUT
 clinical_note = st.text_area("Clinical Notes (Doctor Input)")
 
 st.markdown('</div>',unsafe_allow_html=True)
@@ -206,41 +209,9 @@ if st.button("Predict Risk"):
     )
     st.pyplot(fig)
 
-    # ---------- LLM PROMPT ----------
+    # ---------- MULTIMODAL ----------
     features=", ".join(top["Feature"].values)
 
-    llm_prompt = f"""
-Patient risk predicted as {round(risk,3)}.
-
-Top contributing clinical features with values:
-{data.to_dict()}
-
-IMPORTANT:
-- Use actual values to determine if feature is normal or abnormal
-- Do NOT assume abnormality unless values indicate it
-
-Explain clinically in correct medical context.
-"""
-
-    st.subheader("LLM Clinical Explanation (Grounded with SHAP)")
-
-    try:
-        client=Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-        response=client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role":"system","content":"You are a clinical AI."},
-                {"role":"user","content":llm_prompt}
-            ]
-        )
-
-        st.info(response.choices[0].message.content)
-
-    except:
-        st.warning("LLM explanation unavailable")
-
-    # ---------- 🧠 NEW: MULTIMODAL FUSION ----------
     fusion_output = multimodal_fusion(
         risk,
         features,
@@ -250,7 +221,6 @@ Explain clinically in correct medical context.
     st.subheader("Multimodal Clinical Decision")
     st.write(fusion_output)
 
-    # ---------- REPORT ----------
     reasoning=f"""
 Risk Score: {round(risk,3)}
 
