@@ -14,7 +14,10 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from io import BytesIO
 
-APP_VERSION = "1.3.1"
+# ✅ NEW IMPORT (multimodal)
+from src.multimodal import multimodal_fusion
+
+APP_VERSION = "1.4.0"  # 🔥 bumped version
 
 # ---------- PATH FIX ----------
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -125,6 +128,9 @@ with c3:
     labs=st.number_input("Number of Lab Tests",5)
     meds=st.number_input("Number of Medications",2)
 
+# ✅ NEW: CLINICAL NOTES INPUT
+clinical_note = st.text_area("Clinical Notes (Doctor Input)")
+
 st.markdown('</div>',unsafe_allow_html=True)
 
 # ---------- PREDICTION ----------
@@ -200,7 +206,7 @@ if st.button("Predict Risk"):
     )
     st.pyplot(fig)
 
-    # ---------- UPDATED LLM PROMPT ----------
+    # ---------- LLM PROMPT ----------
     features=", ".join(top["Feature"].values)
 
     llm_prompt = f"""
@@ -234,6 +240,17 @@ Explain clinically in correct medical context.
     except:
         st.warning("LLM explanation unavailable")
 
+    # ---------- 🧠 NEW: MULTIMODAL FUSION ----------
+    fusion_output = multimodal_fusion(
+        risk,
+        features,
+        clinical_note
+    )
+
+    st.subheader("Multimodal Clinical Decision")
+    st.write(fusion_output)
+
+    # ---------- REPORT ----------
     reasoning=f"""
 Risk Score: {round(risk,3)}
 
