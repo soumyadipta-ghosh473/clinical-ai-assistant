@@ -75,3 +75,6 @@ print("AUPRC:", pr)
 joblib.dump(model, "models/xgboost_model.pkl")
 
 print("Model saved in models/xgboost_model.pkl")
+
+# ---------- SAVE FEATURE NAMES ----------
+joblib.dump(X_train.columns.tolist(), "models/feature_names.pkl")
