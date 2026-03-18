@@ -230,6 +230,18 @@ The system evaluates LLM performance on incomplete and noisy clinical inputs suc
 
 This ensures robustness in real-world clinical scenarios.
 
+## Ethical Compliance
+
+
+
+\- MIMIC dataset requires CITI training certification
+
+\- Data is de-identified under HIPAA Safe Harbor
+
+\- This project complies with PhysioNet data usage agreement
+
+\- No personal patient data is exposed
+
 
 
 \## Project Architecture

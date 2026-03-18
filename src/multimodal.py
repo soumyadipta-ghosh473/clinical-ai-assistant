@@ -1,16 +1,18 @@
 from groq import Groq
 import os
+from src.text_processing import extract_keywords  # ✅ NEW
 
 
 def multimodal_fusion(risk, shap_features, clinical_note):
 
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-    # ---------- HARD CONTROL ----------
     if not clinical_note or clinical_note.strip() == "":
         clinical_note = "No clinical notes provided."
 
-    # ---------- STRICT PROMPT ----------
+    # ✅ NEW NLP STEP
+    keywords = extract_keywords(clinical_note)
+
     prompt = f"""
 You are a clinical decision support system.
 
@@ -24,49 +26,32 @@ Top Features:
 Clinical Notes:
 {clinical_note}
 
+Extracted Keywords:
+{keywords}
+
 STRICT RULES:
 - DO NOT ask for more data
-- DO NOT say "please provide notes"
-- DO NOT assume missing information
-- DO NOT use placeholders like [Insert ...]
-- ONLY use the data given above
-- If notes are "No clinical notes provided", clearly state that
+- DO NOT assume missing info
+- DO NOT use placeholders
+- ONLY use given data
 
 OUTPUT FORMAT:
 
 Clinical Decision Support Output
 
-1. Risk Interpretation:
-Explain the risk score in 1-2 lines
-
-2. Key Insights:
-Explain ONLY based on given features
-
-3. Clinical Notes Summary:
-- If notes exist → summarize briefly
-- If no notes → say "No clinical notes provided"
-
-4. Final Decision:
-Short realistic clinical decision
-
-5. Next Steps:
-Bullet points (3–4)
-
-KEEP IT CONCISE AND REALISTIC.
+1. Risk Interpretation
+2. Key Insights
+3. Clinical Notes Summary
+4. Final Decision
+5. Next Steps
 """
 
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are a strict medical AI that only uses provided data."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "system", "content": "You are a strict clinical AI."},
+                {"role": "user", "content": prompt}
             ]
         )
 

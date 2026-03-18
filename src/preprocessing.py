@@ -23,6 +23,16 @@ def percentile_clipping(df):
     return df
 
 
+# ---------- MISSINGNESS INDICATORS ----------
+def add_missing_indicators(df):
+
+    for col in df.columns:
+        if df[col].isnull().sum() > 0:
+            df[f"{col}_missing"] = df[col].isnull().astype(int)
+
+    return df
+
+
 # ---------- KNN IMPUTATION ----------
 def knn_imputation(df):
 
@@ -52,20 +62,12 @@ def preprocess_pipeline(path, use_mice=True):
 
     df = percentile_clipping(df)
 
-    df = add_missing_indicators(df)  # NEW
+    # ✅ INFORMATIVE MISSINGNESS
+    df = add_missing_indicators(df)
 
     if use_mice:
         df = mice_imputation(df)
     else:
         df = knn_imputation(df)
-
-    return df
-
-# ---------- MISSINGNESS INDICATORS ----------
-def add_missing_indicators(df):
-
-    for col in df.columns:
-        if df[col].isnull().sum() > 0:
-            df[f"{col}_missing"] = df[col].isnull().astype(int)
 
     return df

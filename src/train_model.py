@@ -1,14 +1,13 @@
 import joblib
 import xgboost as xgb
 import numpy as np
-import os  # ✅ NEW
+import os
 
 from sklearn.metrics import roc_auc_score, average_precision_score
 
 from src.preprocessing import preprocess_pipeline
 from src.split import subject_level_split
 from src.temporal_features import create_temporal_features
-
 
 # ---------- ENSURE MODELS DIR EXISTS ----------
 os.makedirs("models", exist_ok=True)
@@ -19,6 +18,7 @@ df = preprocess_pipeline("data/mimic_iii_data.csv", use_mice=True)
 
 
 # ---------- TEMPORAL FEATURE ENGINEERING ----------
+# Aggregates: mean, min, max, std (captures patient stability)
 df_temporal = create_temporal_features(df)
 
 

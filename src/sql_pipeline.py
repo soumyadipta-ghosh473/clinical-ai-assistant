@@ -3,17 +3,22 @@ import pandas as pd
 
 def build_cohort(patients, admissions, diagnoses):
 
-    # Join tables
-    df = patients.merge(admissions, on="subject_id")
-    df = df.merge(diagnoses, on="hadm_id")
+    # ---------- JOIN TABLES ----------
+    df = patients.merge(admissions, on="subject_id", how="inner")
+    df = df.merge(diagnoses, on="hadm_id", how="inner")
+
+    # ---------- CLEAN ----------
+    df = df.drop_duplicates()
 
     # ---------- INCLUSION ----------
-    df = df[df["age"] >= 18]
+    if "age" in df.columns:
+        df = df[df["age"] >= 18]
 
-    # ICD filter (Heart Failure example)
-    df = df[df["icd_code"].str.startswith("I50")]
+    if "icd_code" in df.columns:
+        df = df[df["icd_code"].str.startswith("I50", na=False)]
 
     # ---------- EXCLUSION ----------
-    df = df[df["los"] >= 1]  # at least 24 hrs
+    if "los" in df.columns:
+        df = df[df["los"] >= 1]
 
     return df
