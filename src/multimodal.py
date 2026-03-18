@@ -6,43 +6,71 @@ def multimodal_fusion(risk, shap_features, clinical_note):
 
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-    # ---------- HANDLE EMPTY NOTES ----------
+    # ---------- HARD CONTROL ----------
     if not clinical_note or clinical_note.strip() == "":
         clinical_note = "No clinical notes provided."
 
-    # ---------- STRONG PROMPT ----------
+    # ---------- STRICT PROMPT ----------
     prompt = f"""
 You are a clinical decision support system.
 
-Patient risk score: {round(risk,3)}
+INPUT DATA (DO NOT MODIFY OR QUESTION):
 
-Top contributing features:
+Risk Score: {round(risk,3)}
+
+Top Features:
 {shap_features}
 
-Clinical notes:
+Clinical Notes:
 {clinical_note}
 
-STRICT INSTRUCTIONS:
-- Do NOT use placeholders like [Insert ...]
-- If clinical notes are missing, explicitly say "No clinical notes provided"
-- Only use the given data
-- Do NOT assume abnormalities unless stated
-- Keep response professional and realistic
+STRICT RULES:
+- DO NOT ask for more data
+- DO NOT say "please provide notes"
+- DO NOT assume missing information
+- DO NOT use placeholders like [Insert ...]
+- ONLY use the data given above
+- If notes are "No clinical notes provided", clearly state that
 
-Provide:
-1. Risk interpretation
-2. Key clinical insights
-3. Final decision
-4. Recommended next steps
+OUTPUT FORMAT:
+
+Clinical Decision Support Output
+
+1. Risk Interpretation:
+Explain the risk score in 1-2 lines
+
+2. Key Insights:
+Explain ONLY based on given features
+
+3. Clinical Notes Summary:
+- If notes exist → summarize briefly
+- If no notes → say "No clinical notes provided"
+
+4. Final Decision:
+Short realistic clinical decision
+
+5. Next Steps:
+Bullet points (3–4)
+
+KEEP IT CONCISE AND REALISTIC.
 """
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role":"system","content":"You are a professional ICU clinical AI assistant."},
-            {"role":"user","content":prompt}
-        ]
-    )
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a strict medical AI that only uses provided data."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
 
-    # ---------- RETURN OUTPUT ----------
-    return response.choices[0].message.content
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"Multimodal system error: {str(e)}"
