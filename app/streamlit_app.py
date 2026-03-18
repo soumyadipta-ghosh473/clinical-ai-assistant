@@ -14,7 +14,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from io import BytesIO
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 
 # ---------- PATH FIX ----------
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -130,7 +130,6 @@ st.markdown('</div>',unsafe_allow_html=True)
 # ---------- PREDICTION ----------
 if st.button("Predict Risk"):
 
-    # ALERTS
     alerts=[]
     if heart_rate>120: alerts.append("Tachycardia detected")
     if spo2<92: alerts.append("Hypoxia risk")
@@ -165,7 +164,6 @@ if st.button("Predict Risk"):
 
     st.metric("Readmission Risk Score",round(risk,3))
 
-    # GAUGE
     fig=go.Figure(go.Indicator(
         mode="gauge+number",
         value=risk,
@@ -177,7 +175,6 @@ if st.button("Predict Risk"):
     ))
     st.plotly_chart(fig)
 
-    # SHAP
     explainer=shap.TreeExplainer(model)
     shap_values=explainer.shap_values(data)
 
@@ -203,16 +200,20 @@ if st.button("Predict Risk"):
     )
     st.pyplot(fig)
 
-    # ---------- LLM GROUNDED EXPLANATION ----------
+    # ---------- UPDATED LLM PROMPT ----------
     features=", ".join(top["Feature"].values)
 
-    llm_prompt=f"""
+    llm_prompt = f"""
 Patient risk predicted as {round(risk,3)}.
 
-Top contributing clinical features:
-{features}
+Top contributing clinical features with values:
+{data.to_dict()}
 
-Explain clinically based ONLY on these features.
+IMPORTANT:
+- Use actual values to determine if feature is normal or abnormal
+- Do NOT assume abnormality unless values indicate it
+
+Explain clinically in correct medical context.
 """
 
     st.subheader("LLM Clinical Explanation (Grounded with SHAP)")
@@ -233,7 +234,6 @@ Explain clinically based ONLY on these features.
     except:
         st.warning("LLM explanation unavailable")
 
-    # ---------- REPORT ----------
     reasoning=f"""
 Risk Score: {round(risk,3)}
 
@@ -244,7 +244,6 @@ Primary Risk Factors:
     st.subheader("AI Clinical Assessment")
     st.write(reasoning)
 
-    # ---------- PDF ----------
     buffer=BytesIO()
     styles=getSampleStyleSheet()
 
