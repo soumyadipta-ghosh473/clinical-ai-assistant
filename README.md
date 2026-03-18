@@ -18,23 +18,23 @@ The system integrates \*\*XGBoost prediction, SHAP explainability, Streamlit das
 
 
 
-• ICU Readmission Risk Prediction  
+• ICU Readmission Risk Prediction
 
-• SHAP Explainable AI  
+• SHAP Explainable AI
 
-• Interactive Clinical Dashboard  
+• Interactive Clinical Dashboard
 
-• Risk Gauge Visualization  
+• Risk Gauge Visualization
 
-• AI Doctor Chatbot  
+• AI Doctor Chatbot
 
-• Prompt Versioning  
+• Prompt Versioning
 
-• Clinical Interpretation Layer  
+• Clinical Interpretation Layer
 
-• PDF Clinical Report Generation  
+• PDF Clinical Report Generation
 
-• CI/CD Pipeline using GitHub Actions  
+• CI/CD Pipeline using GitHub Actions
 
 
 
@@ -92,31 +92,31 @@ Evaluation Metrics:
 
 
 
-Clinical Dataset  
+Clinical Dataset
 
-↓  
+↓
 
-Data Preprocessing (KNN + Percentile Clipping)  
+Data Preprocessing (KNN + Percentile Clipping)
 
-↓  
+↓
 
-XGBoost Prediction Model  
+XGBoost Prediction Model
 
-↓  
+↓
 
-SHAP Explainability  
+SHAP Explainability
 
-↓  
+↓
 
-Clinical Interpretation Layer  
+Clinical Interpretation Layer
 
-↓  
+↓
 
-Streamlit Clinical Dashboard  
+Streamlit Clinical Dashboard
 
-↓  
+↓
 
-PDF Medical Report  
+PDF Medical Report
 
 
 
@@ -128,23 +128,23 @@ PDF Medical Report
 
 
 
-Python  
+Python
 
-XGBoost  
+XGBoost
 
-Streamlit  
+Streamlit
 
-SHAP  
+SHAP
 
-Plotly  
+Plotly
 
-Scikit-Learn  
+Scikit-Learn
 
-Pandas  
+Pandas
 
-ReportLab  
+ReportLab
 
-GitHub Actions  
+GitHub Actions
 
 
 
@@ -160,17 +160,17 @@ The dashboard allows clinicians to:
 
 
 
-• Enter patient parameters  
+• Enter patient parameters
 
-• Predict ICU readmission risk  
+• Predict ICU readmission risk
 
-• Visualize risk using a gauge chart  
+• Visualize risk using a gauge chart
 
-• View SHAP feature importance plots  
+• View SHAP feature importance plots
 
-• Generate downloadable clinical reports  
+• Generate downloadable clinical reports
 
-• Ask questions using the AI Doctor Assistant  
+• Ask questions using the AI Doctor Assistant
 
 
 
@@ -186,15 +186,87 @@ GitHub Actions automatically performs:
 
 
 
-• Dependency installation  
+• Dependency installation
 
-• Pipeline validation  
+• Pipeline validation
 
-• Model environment testing  
+• Model environment testing
 
 
 
 \---
+
+
+
+\## Ethical Compliance
+
+
+
+\- MIMIC-IV dataset requires CITI training for access
+
+\- Data is de-identified under HIPAA Safe Harbor standards
+
+\- This system uses only de-identified patient data
+
+\- No real patient-identifiable information is used
+
+
+
+\## Prompt Robustness Testing
+
+
+
+The system evaluates LLM performance on incomplete and noisy clinical inputs such as:
+
+
+
+\- "Patient fever"
+
+\- "HR high maybe infection ???"
+
+\- "tachycardia but stable??"
+
+
+
+This ensures robustness in real-world clinical scenarios.
+
+
+
+\## Project Architecture
+
+clinical-ai-assistant
+
+│
+
+├── app
+
+│   └── streamlit\_app.py
+
+│
+
+├── src
+
+│   ├── preprocessing.py
+
+│   ├── train\_model.py
+
+│   ├── mimic\_pipeline.py
+
+│   ├── calibration.py
+
+│   ├── bootstrap\_eval.py
+
+│   ├── bias\_analysis.py
+
+│   └── prompt\_testing.py
+
+│
+
+├── data
+
+├── models
+
+├── prompts
 
 
 

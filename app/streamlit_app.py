@@ -14,15 +14,13 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import letter
 from io import BytesIO
 
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.3.0"
 
-# ---------- PATH FIX FOR STREAMLIT CLOUD ----------
+# ---------- PATH FIX ----------
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
-
 model_path = BASE_DIR / "models" / "xgboost_model.pkl"
 prompt_path = BASE_DIR / "prompts" / "clinical_prompt_v1.txt"
 
-# ---------- PROMPT ----------
 def load_prompt():
     with open(prompt_path,"r") as f:
         return f.read()
@@ -76,12 +74,12 @@ bp=np.random.normal(120,5,20)
 col1,col2=st.columns(2)
 
 with col1:
-    st.plotly_chart(px.line(x=time,y=hr,labels={"x":"Time","y":"Heart Rate"}),use_container_width=True)
-    st.plotly_chart(px.line(x=time,y=temp,labels={"x":"Time","y":"Temperature"}),use_container_width=True)
+    st.plotly_chart(px.line(x=time,y=hr),use_container_width=True)
+    st.plotly_chart(px.line(x=time,y=temp),use_container_width=True)
 
 with col2:
-    st.plotly_chart(px.line(x=time,y=spo2,labels={"x":"Time","y":"SpO2"}),use_container_width=True)
-    st.plotly_chart(px.line(x=time,y=bp,labels={"x":"Time","y":"Blood Pressure"}),use_container_width=True)
+    st.plotly_chart(px.line(x=time,y=spo2),use_container_width=True)
+    st.plotly_chart(px.line(x=time,y=bp),use_container_width=True)
 
 st.markdown('</div>',unsafe_allow_html=True)
 
@@ -132,20 +130,12 @@ st.markdown('</div>',unsafe_allow_html=True)
 # ---------- PREDICTION ----------
 if st.button("Predict Risk"):
 
-    # ---------- ALERT SYSTEM (MOVED HERE) ----------
+    # ALERTS
     alerts=[]
-
-    if heart_rate>120:
-        alerts.append("Tachycardia detected")
-
-    if spo2<92:
-        alerts.append("Hypoxia risk")
-
-    if temperature>38:
-        alerts.append("Possible infection")
-
-    if creatinine>1.5:
-        alerts.append("Kidney function abnormal")
+    if heart_rate>120: alerts.append("Tachycardia detected")
+    if spo2<92: alerts.append("Hypoxia risk")
+    if temperature>38: alerts.append("Possible infection")
+    if creatinine>1.5: alerts.append("Kidney function abnormal")
 
     if alerts:
         st.markdown('<div class="section">',unsafe_allow_html=True)
@@ -175,6 +165,7 @@ if st.button("Predict Risk"):
 
     st.metric("Readmission Risk Score",round(risk,3))
 
+    # GAUGE
     fig=go.Figure(go.Indicator(
         mode="gauge+number",
         value=risk,
@@ -184,15 +175,15 @@ if st.button("Predict Risk"):
                  {'range':[0.4,0.7],'color':'yellow'},
                  {'range':[0.7,1],'color':'red'}]}
     ))
-
     st.plotly_chart(fig)
 
+    # SHAP
     explainer=shap.TreeExplainer(model)
     shap_values=explainer.shap_values(data)
 
     shap_df=pd.DataFrame({
-    "Feature":data.columns,
-    "Importance":abs(shap_values[0])
+        "Feature":data.columns,
+        "Importance":abs(shap_values[0])
     })
 
     top=shap_df.sort_values("Importance",ascending=False).head(5)
@@ -201,36 +192,59 @@ if st.button("Predict Risk"):
     st.table(top)
 
     fig,ax=plt.subplots()
-
     shap.plots.waterfall(
         shap.Explanation(
-        values=shap_values[0],
-        base_values=explainer.expected_value,
-        data=data.iloc[0],
-        feature_names=data.columns),
-        show=False)
-
+            values=shap_values[0],
+            base_values=explainer.expected_value,
+            data=data.iloc[0],
+            feature_names=data.columns
+        ),
+        show=False
+    )
     st.pyplot(fig)
 
-# ---------- AI CLINICAL REPORT ----------
-    prompt=load_prompt()
+    # ---------- LLM GROUNDED EXPLANATION ----------
     features=", ".join(top["Feature"].values)
 
+    llm_prompt=f"""
+Patient risk predicted as {round(risk,3)}.
+
+Top contributing clinical features:
+{features}
+
+Explain clinically based ONLY on these features.
+"""
+
+    st.subheader("LLM Clinical Explanation (Grounded with SHAP)")
+
+    try:
+        client=Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+        response=client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role":"system","content":"You are a clinical AI."},
+                {"role":"user","content":llm_prompt}
+            ]
+        )
+
+        st.info(response.choices[0].message.content)
+
+    except:
+        st.warning("LLM explanation unavailable")
+
+    # ---------- REPORT ----------
     reasoning=f"""
 Risk Score: {round(risk,3)}
 
 Primary Risk Factors:
 {features}
-
-Possible Clinical Interpretation:
-These physiological indicators suggest potential clinical instability.
-Continuous monitoring and further diagnostic testing may be recommended.
 """
 
     st.subheader("AI Clinical Assessment")
     st.write(reasoning)
 
-# ---------- PDF REPORT ----------
+    # ---------- PDF ----------
     buffer=BytesIO()
     styles=getSampleStyleSheet()
 
@@ -238,39 +252,31 @@ Continuous monitoring and further diagnostic testing may be recommended.
     elements.append(Paragraph("AI Clinical Risk Report",styles['Title']))
     elements.append(Spacer(1,20))
     elements.append(Paragraph(reasoning,styles['Normal']))
-    elements.append(Spacer(1,20))
 
     table_data=[list(data.columns)]+data.values.tolist()
-    table=Table(table_data)
-    elements.append(table)
+    elements.append(Table(table_data))
 
     doc=SimpleDocTemplate(buffer,pagesize=letter)
     doc.build(elements)
 
     st.download_button("Download PDF Report",buffer.getvalue(),"clinical_report.pdf")
 
-# ---------- DOCTOR AI ----------
+# ---------- CHATBOT ----------
 st.markdown('<div class="section">',unsafe_allow_html=True)
 st.subheader("Doctor AI Assistant")
 
 question=st.text_input("Ask a medical question")
 
 if question:
-
     client=Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-    system_prompt="""
-You are a professional medical assistant.
-Only answer healthcare questions.
-If unrelated say: I can only assist with medical questions.
-"""
-
     r=client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
-    messages=[
-    {"role":"system","content":system_prompt},
-    {"role":"user","content":question}
-    ])
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role":"system","content":"Only answer medical questions."},
+            {"role":"user","content":question}
+        ]
+    )
 
     st.write(r.choices[0].message.content)
 
