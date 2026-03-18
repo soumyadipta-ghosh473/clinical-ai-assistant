@@ -3,35 +3,47 @@ import xgboost as xgb
 import numpy as np
 
 from sklearn.metrics import roc_auc_score, average_precision_score
+
 from src.preprocessing import preprocess_pipeline
 from src.split import subject_level_split
+from src.temporal_features import create_temporal_features  # NEW
 
-# Load data
+
+# ---------- LOAD DATA ----------
 df = preprocess_pipeline("data/mimic_iii_data.csv", use_mice=True)
+
+
+# ---------- TEMPORAL FEATURE ENGINEERING ----------
+# Create aggregated features per patient
+df_temporal = create_temporal_features(df)
+
+
+# Merge target back (IMPORTANT)
+target_df = df[["Patient_ID", "Readmission_Flag"]].drop_duplicates()
+
+df = df_temporal.merge(target_df, on="Patient_ID")
+
 
 # ---------- SUBJECT-LEVEL SPLIT ----------
 train_df, test_df = subject_level_split(df)
 
-# Target
+
+# ---------- TARGET ----------
 y_train = train_df["Readmission_Flag"]
 y_test = test_df["Readmission_Flag"]
 
-# Features
+
+# ---------- FEATURES ----------
 X_train = train_df.drop(columns=[
     "Readmission_Flag",
-    "Diagnoses",
-    "Medications",
-    "Patient_ID",
-    "ICU_Admission_ID"
+    "Patient_ID"
 ], errors="ignore")
 
 X_test = test_df.drop(columns=[
     "Readmission_Flag",
-    "Diagnoses",
-    "Medications",
-    "Patient_ID",
-    "ICU_Admission_ID"
+    "Patient_ID"
 ], errors="ignore")
+
 
 # ---------- MODEL ----------
 model = xgb.XGBClassifier(
@@ -42,10 +54,14 @@ model = xgb.XGBClassifier(
     eval_metric="logloss"
 )
 
+
+# ---------- TRAIN ----------
 model.fit(X_train, y_train)
 
-# ---------- PREDICTIONS ----------
+
+# ---------- PREDICT ----------
 pred = model.predict_proba(X_test)[:, 1]
+
 
 # ---------- METRICS ----------
 roc = roc_auc_score(y_test, pred)
@@ -54,7 +70,8 @@ pr = average_precision_score(y_test, pred)
 print("AUROC:", roc)
 print("AUPRC:", pr)
 
-# ---------- SAVE MODEL ----------
+
+# ---------- SAVE ----------
 joblib.dump(model, "models/xgboost_model.pkl")
 
 print("Model saved in models/xgboost_model.pkl")
